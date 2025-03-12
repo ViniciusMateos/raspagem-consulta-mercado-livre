@@ -35,7 +35,7 @@ def ConsultaMercadoLivre(maximotentativas=5):
             produto = str(produto).replace(" ", "+")
 
         try:
-            url = 'https://www.mercadolivre.com.br/'
+            url = 'https://www.mercadolivre.com.b/'
             head = {
               'Host': 'www.mercadolivre.com.br',
               'Connection': 'keep-alive',
@@ -216,7 +216,9 @@ def ConsultaMercadoLivre(maximotentativas=5):
             tentativas+=1
             time.sleep(5)
             continue
-            print("NÚMERO MÁXIMO DE TENTATIVAS")
+
+    if tentativas >= maximotentativas:
+        print("NÚMERO MÁXIMO DE TENTATIVAS")
 
 consulta = ConsultaMercadoLivre()
 
