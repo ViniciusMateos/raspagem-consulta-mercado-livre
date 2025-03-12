@@ -35,7 +35,7 @@ def ConsultaMercadoLivre(maximotentativas=5):
             produto = str(produto).replace(" ", "+")
 
         try:
-            url = 'https://www.mercadolivre.com.b/'
+            url = 'https://www.mercadolivre.com.br/'
             head = {
               'Host': 'www.mercadolivre.com.br',
               'Connection': 'keep-alive',
