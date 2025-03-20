@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Resultados da Pesquisa</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <div class="container">
+        <h1>Resultados da Pesquisa</h1>
+        <div class="results-container">
+            {% for produto in produtos %}
+            <div class="card" id="results-container">
+                <img src="{{ produto.imagem }}" alt="{{ produto.Nome }}">
+                <h2>{{ produto.Nome }}</h2>
+                <p>Preço: R$ {{ produto.Preço }}</p>
+                <a href="{{ produto.link }}" target="_blank">Ver no Mercado Livre</a>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</body>
+</html>

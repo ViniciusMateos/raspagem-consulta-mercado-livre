@@ -1,14 +1,11 @@
 import os
 import traceback
-from logging import exception
 import time
 import requests
 import warnings
 import urllib3
-import openpyxl
 from openpyxl import load_workbook
 from openpyxl.styles import NamedStyle
-from openpyxl.worksheet.hyperlink import Hyperlink
 from selenium import webdriver
 from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.common.by import By
@@ -203,7 +200,7 @@ def ConsultaMercadoLivre(maximotentativas=5):
             print("CRIADO ARQUIVO EXCEL COM SUCESSO")
             os.startfile(excel_file)
 
-            break
+            return produtos
 
         except Exception as e:
             print("ERRO DE CONSULTA DO MERCADO LIVRE!!!!")
@@ -217,10 +214,14 @@ def ConsultaMercadoLivre(maximotentativas=5):
             time.sleep(5)
             continue
 
+
     if tentativas >= maximotentativas:
         print("NÚMERO MÁXIMO DE TENTATIVAS")
+    return None
+
 
 consulta = ConsultaMercadoLivre()
+
 
 
 
