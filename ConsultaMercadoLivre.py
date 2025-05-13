@@ -9,6 +9,7 @@ from openpyxl.styles import NamedStyle
 from selenium import webdriver
 from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.common.by import By
+from webdriver_manager.chrome import ChromeDriverManager
 from selenium.webdriver.common.action_chains import ActionChains
 from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.support import expected_conditions as EC
@@ -97,19 +98,14 @@ def ConsultaMercadoLivre(maximotentativas=5):
             }
             response = requests.get(url, headers=head, verify=False)
 
-            # Caminho para o seu ChromeDriver
-            driver_path = 'chromedriver-win64/chromedriver.exe'
 
             # Configurações do Selenium para rodar em segundo plano (sem abrir o navegador)
             chrome_options = Options()
             chrome_options.add_argument("--headless")  # Isso vai rodar o navegador em segundo plano
             chrome_options.add_argument("--disable-gpu")
 
-            # Configura o serviço do ChromeDriver
-            service = Service(driver_path)
-
             # Inicializa o WebDriver
-            driver = webdriver.Chrome(service=service, options=chrome_options)
+            driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()))
 
             # URL do Mercado Livre
             # Acessa a página
@@ -120,16 +116,19 @@ def ConsultaMercadoLivre(maximotentativas=5):
                 EC.presence_of_all_elements_located((By.CLASS_NAME, 'ui-search-layout__item'))
             )
 
-            # Encontra todos os itens de produto (ajuste conforme necessário)
-            product_items = driver.find_elements(By.CSS_SELECTOR, '.poly-card__portada')
-
-            # Cria uma instância do ActionChains para mover o mouse
             action = ActionChains(driver)
 
-            # Passa o mouse sobre cada item para garantir que tudo seja carregado
-            for item in product_items:
-                action.move_to_element(item).perform()
-                time.sleep(0.5)
+            # Reobtem os elementos sempre dentro do loop para evitar stale reference
+            product_items = driver.find_elements(By.CSS_SELECTOR, '.poly-card__portada')
+            for i in range(len(product_items)):
+                try:
+                    item = driver.find_elements(By.CSS_SELECTOR, '.poly-card__portada')[i]
+                    action.move_to_element(item).perform()
+                    time.sleep(0.5)
+                except Exception as e:
+                    print(f"[AVISO] Elemento {i} ficou obsoleto: {e}")
+                    continue
+
             WebDriverWait(driver, 10).until(
                 EC.presence_of_all_elements_located((By.CLASS_NAME, 'ui-search-layout__item'))
             )

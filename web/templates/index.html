@@ -10,10 +10,23 @@
 <body>
     <div class="container">
         <h1>Pesquisar no Mercado Livre</h1>
-        <form method="POST">
+        <form method="POST" onsubmit="mostrarLoading()">
             <input type="text" name="produto" placeholder="Digite o produto..." required>
-            <button type="submit">Pesquisar</button>
+
+            <button id="btn-pesquisar" type="submit">Pesquisar</button>
+
+            <div id="loading" style="display: none;">
+                <div class="spinner"></div>
+                <p>Consultando produto...</p>
+            </div>
         </form>
     </div>
+
+<script>
+    function mostrarLoading() {
+        document.getElementById("btn-pesquisar").style.display = "none";
+        document.getElementById("loading").style.display = "block";
+    }
+</script>
 </body>
 </html>

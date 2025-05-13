@@ -14,6 +14,7 @@ from selenium.webdriver.common.action_chains import ActionChains
 from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.ui import WebDriverWait
+from webdriver_manager.chrome import ChromeDriverManager
 import pandas as pd
 from bs4 import BeautifulSoup
 
@@ -95,11 +96,10 @@ def consulta_mercado_livre(produto, maximotentativas=5):
             }
             response = requests.get(url, headers=head, verify=False)
 
-            driver_path = '../chromedriver-win64/chromedriver.exe'
             chrome_options = Options()
             chrome_options.add_argument("--headless")
             chrome_options.add_argument("--disable-gpu")
-            service = Service(driver_path)
+            service = Service(ChromeDriverManager().install())
             driver = webdriver.Chrome(service=service, options=chrome_options)
             driver.get(location)
 
@@ -107,11 +107,18 @@ def consulta_mercado_livre(produto, maximotentativas=5):
                 EC.presence_of_all_elements_located((By.CLASS_NAME, 'ui-search-layout__item'))
             )
 
-            product_items = driver.find_elements(By.CSS_SELECTOR, '.poly-card__portada')
             action = ActionChains(driver)
-            for item in product_items:
-                action.move_to_element(item).perform()
-                time.sleep(0.5)
+            product_count = len(driver.find_elements(By.CSS_SELECTOR, '.poly-card__portada'))
+
+            for i in range(product_count):
+                try:
+                    item = driver.find_elements(By.CSS_SELECTOR, '.poly-card__portada')[i]
+                    action.move_to_element(item).perform()
+                    time.sleep(0.5)
+                except Exception as e:
+                    print(f"[AVISO] Erro ao mover para item {i}: {e}")
+                    continue
+
             WebDriverWait(driver, 10).until(
                 EC.presence_of_all_elements_located((By.CLASS_NAME, 'ui-search-layout__item'))
             )
