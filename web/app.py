@@ -31,122 +31,66 @@ def consulta_mercado_livre(produto, maximotentativas=5):
 
     while tentativas <= maximotentativas:
         try:
-            url = 'https://www.mercadolivre.com.br/'
-            head = {
-                'Host': 'www.mercadolivre.com.br',
-                'Connection': 'keep-alive',
-                'sec-ch-ua': '"Not:A-Brand";v="24", "Chromium";v="134"',
-                'sec-ch-ua-mobile': '?0',
-                'sec-ch-ua-platform': '"Windows"',
-                'Accept-Language': 'pt-BR,pt;q=0.9',
-                'Upgrade-Insecure-Requests': '1',
-                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/134.0.0.0 Safari/537.36',
-                'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7',
-                'Referer': 'https://www.google.com/',
-                'Accept-Encoding': 'gzip, deflate, br, zstd',
-            }
-            response = requests.get(url, headers=head, verify=False)
-
-            sessionId = response.cookies['_mldataSessionId']
-            d2id = response.cookies['_d2id']
-            navigation = response.cookies['c_ui-navigation']
-
-            url = f'https://lista.mercadolivre.com.br/{produto}'
-            head = {
-                'Host': 'lista.mercadolivre.com.br',
-                'Connection': 'keep-alive',
-                'Accept-Language': 'pt-BR,pt;q=0.9',
-                'Upgrade-Insecure-Requests': '1',
-                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/134.0.0.0 Safari/537.36',
-                'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7',
-                'Sec-Fetch-Site': 'same-site',
-                'Sec-Fetch-Mode': 'navigate',
-                'Sec-Fetch-User': '?1',
-                'Sec-Fetch-Dest': 'document',
-                'sec-ch-ua': '"Not:A-Brand";v="24", "Chromium";v="134"',
-                'sec-ch-ua-mobile': '?0',
-                'sec-ch-ua-platform': '"Windows"',
-                'Referer': 'https://www.mercadolivre.com.br/',
-                'Cookie': f'_mldataSessionId={sessionId}; _d2id={d2id}',
-            }
-            response = requests.get(url, headers=head, verify=False, allow_redirects=False)
-
-            location = response.headers['location']
-
-            url = location
-            head = {
-                'Host': 'lista.mercadolivre.com.br',
-                'Connection': 'keep-alive',
-                'Accept-Language': 'pt-BR,pt;q=0.9',
-                'Upgrade-Insecure-Requests': '1',
-                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/134.0.0.0 Safari/537.36',
-                'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7',
-                'Sec-Fetch-Site': 'same-site',
-                'Sec-Fetch-Mode': 'navigate',
-                'Sec-Fetch-User': '?1',
-                'Sec-Fetch-Dest': 'document',
-                'device-memory': '8',
-                'dpr': '1',
-                'viewport-width': '1920',
-                'rtt': '50',
-                'downlink': '1.65',
-                'ect': '4g',
-                'Referer': 'https://www.mercadolivre.com.br/',
-                'Cookie': f'_mldataSessionId={sessionId}; _d2id={d2id}; _csrf=tP7OUS8o1QLoRjSKBaXY7_v2; _mldataSessionId={sessionId}; c_ui-navigation={navigation}',
-            }
-            response = requests.get(url, headers=head, verify=False)
-
+            # Selenium headless
             chrome_options = Options()
-            chrome_options.add_argument("--headless")
+            chrome_options.add_argument("--headless=new")
             chrome_options.add_argument("--disable-gpu")
-            service = Service(ChromeDriverManager().install())
-            driver = webdriver.Chrome(service=service, options=chrome_options)
-            driver.get(location)
-
-            WebDriverWait(driver, 10).until(
-                EC.presence_of_all_elements_located((By.CLASS_NAME, 'ui-search-layout__item'))
+            chrome_options.add_argument("--no-sandbox")
+            chrome_options.add_argument("--disable-dev-shm-usage")
+            chrome_options.add_argument("--window-size=1920,1080")
+            chrome_options.add_argument(
+                "user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/134.0.0.0 Safari/537.36"
             )
 
-            action = ActionChains(driver)
-            product_count = len(driver.find_elements(By.CSS_SELECTOR, '.poly-card__portada'))
-
-            for i in range(product_count):
-                try:
-                    item = driver.find_elements(By.CSS_SELECTOR, '.poly-card__portada')[i]
-                    action.move_to_element(item).perform()
-                    time.sleep(0.5)
-                except Exception as e:
-                    print(f"[AVISO] Erro ao mover para item {i}: {e}")
-                    continue
-
-            WebDriverWait(driver, 10).until(
-                EC.presence_of_all_elements_located((By.CLASS_NAME, 'ui-search-layout__item'))
+            driver = webdriver.Chrome(
+                service=Service(ChromeDriverManager().install()),
+                options=chrome_options
             )
-
-            html = driver.page_source
-            soup = BeautifulSoup(html, "html.parser")
-            items = soup.find_all('li', class_='ui-search-layout__item')
 
             produtos = []
-            for item in items:
-                nome = item.find('a', class_='poly-component__title')
-                if nome:
-                    nome = nome.text.strip()
 
-                imagem = item.find('img', class_='poly-component__picture')
-                if imagem:
-                    imagem = imagem['src']
+            for pagina in range(1, 6):  # ATÉ A 5ª PÁGINA
+                if pagina == 1:
+                    url = f"https://lista.mercadolivre.com.br/{produto}"
+                else:
+                    desde = (pagina - 1) * 48 + 1
+                    url = f"https://lista.mercadolivre.com.br/{produto}_Desde_{desde}"
 
-                preco = item.find('span', class_='andes-money-amount andes-money-amount--cents-superscript')
-                if preco:
-                    preco = preco.text.strip()
+                print(f"📄 Coletando página {pagina}: {url}")
+                driver.get(url)
 
-                link = item.find('a', class_='poly-component__title')
-                if link:
-                    link = link['href']
+                time.sleep(5)  # Mercado Livre carrega via JS
 
-                produtos.append({"Nome": nome, "Preço": preco, "imagem": imagem, "link": link})
+                html = driver.page_source
+                soup = BeautifulSoup(html, "html.parser")
 
+                items = soup.select('li.ui-search-layout__item, li.ui-search-layout__stack')
+
+                for item in items:
+                    nome = item.find('a', class_='poly-component__title')
+                    nome = nome.text.strip() if nome else ""
+
+                    imagem = item.find('img', class_='poly-component__picture')
+                    imagem = imagem['src'] if imagem else ""
+
+                    preco = item.find('span', class_='andes-money-amount')
+                    preco = preco.text.strip() if preco else ""
+
+                    link = item.find('a', class_='poly-component__title')
+                    link = link['href'] if link else ""
+
+                    produtos.append({
+                        "Nome": nome,
+                        "Preço": preco,
+                        "Imagem": imagem,
+                        "Link": link
+                    })
+
+                time.sleep(2)  # anti-ban básico 😇
+
+            driver.quit()
+
+            # Tratamento de preços
             for product in produtos:
                 preco = product['Preço']
                 if isinstance(preco, str):
@@ -154,6 +98,25 @@ def consulta_mercado_livre(produto, maximotentativas=5):
                     product['Preço'] = float(preco) if preco else 0.0
 
             produtos_ordenados = sorted(produtos, key=lambda x: x['Preço'])
+
+            df = pd.DataFrame(produtos_ordenados)
+
+            excel_file = 'produtos_ordenados.xlsx'
+            df.to_excel(excel_file, index=False)
+
+            wb = load_workbook(excel_file)
+            ws = wb.active
+
+            currency_style = NamedStyle(name="currency_style", number_format='R$ #,##0.00')
+
+            for row in range(2, len(df) + 2):
+                ws.cell(row=row, column=2).style = currency_style
+
+            wb.save(excel_file)
+
+            print("✅ ARQUIVO EXCEL CRIADO COM SUCESSO")
+            os.startfile(excel_file)
+
             return produtos_ordenados
 
         except Exception as e:

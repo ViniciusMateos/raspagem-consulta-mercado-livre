@@ -28,196 +28,106 @@ def ConsultaMercadoLivre(maximotentativas=5):
         while produto == "":
             produto = input("Digite um item para pesquisar no Mercado Livre: ")
             if not " " in produto:
-               produto = produto + " "
-
-            produto = str(produto).replace(" ", "+")
+                produto += " "
+            produto = produto.replace(" ", "+")
 
         try:
-            url = 'https://www.mercadolivre.com.br/'
-            head = {
-              'Host': 'www.mercadolivre.com.br',
-              'Connection': 'keep-alive',
-              'sec-ch-ua': '"Not:A-Brand";v="24", "Chromium";v="134"',
-              'sec-ch-ua-mobile': '?0',
-              'sec-ch-ua-platform': '"Windows"',
-              'Accept-Language': 'pt-BR,pt;q=0.9',
-              'Upgrade-Insecure-Requests': '1',
-              'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/134.0.0.0 Safari/537.36',
-              'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7',
-              'Referer': 'https://www.google.com/',
-              'Accept-Encoding': 'gzip, deflate, br, zstd',
-            }
-            response = requests.get(url, headers=head, verify=False)
-
-            sessionId = response.cookies['_mldataSessionId']
-            d2id = response.cookies['_d2id']
-            navigation = response.cookies['c_ui-navigation']
-
-            url = f'https://lista.mercadolivre.com.br/{produto}'
-            head = {
-              'Host': 'lista.mercadolivre.com.br',
-              'Connection': 'keep-alive',
-              'Accept-Language': 'pt-BR,pt;q=0.9',
-              'Upgrade-Insecure-Requests': '1',
-              'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/134.0.0.0 Safari/537.36',
-              'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7',
-              'Sec-Fetch-Site': 'same-site',
-              'Sec-Fetch-Mode': 'navigate',
-              'Sec-Fetch-User': '?1',
-              'Sec-Fetch-Dest': 'document',
-              'sec-ch-ua': '"Not:A-Brand";v="24", "Chromium";v="134"',
-              'sec-ch-ua-mobile': '?0',
-              'sec-ch-ua-platform': '"Windows"',
-              'Referer': 'https://www.mercadolivre.com.br/',
-              'Cookie': f'_mldataSessionId={sessionId}; _d2id={d2id}',
-            }
-            response = requests.get(url, headers=head, verify=False, allow_redirects=False)
-
-            location = response.headers['location']
-
-            url = location
-            head = {
-              'Host': 'lista.mercadolivre.com.br',
-              'Connection': 'keep-alive',
-              'Accept-Language': 'pt-BR,pt;q=0.9',
-              'Upgrade-Insecure-Requests': '1',
-              'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/134.0.0.0 Safari/537.36',
-              'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7',
-              'Sec-Fetch-Site': 'same-site',
-              'Sec-Fetch-Mode': 'navigate',
-              'Sec-Fetch-User': '?1',
-              'Sec-Fetch-Dest': 'document',
-              'device-memory': '8',
-              'dpr': '1',
-              'viewport-width': '1920',
-              'rtt': '50',
-              'downlink': '1.65',
-              'ect': '4g',
-              'Referer': 'https://www.mercadolivre.com.br/',
-              'Cookie': f'_mldataSessionId={sessionId}; _d2id={d2id}; _csrf=tP7OUS8o1QLoRjSKBaXY7_v2; _mldataSessionId={sessionId}; c_ui-navigation={navigation}',
-            }
-            response = requests.get(url, headers=head, verify=False)
-
-
-            # Configurações do Selenium para rodar em segundo plano (sem abrir o navegador)
+            # Selenium headless
             chrome_options = Options()
-            chrome_options.add_argument("--headless")  # Isso vai rodar o navegador em segundo plano
+            chrome_options.add_argument("--headless=new")
             chrome_options.add_argument("--disable-gpu")
-
-            # Inicializa o WebDriver
-            driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()))
-
-            # URL do Mercado Livre
-            # Acessa a página
-            driver.get(location)
-
-            # Espera até que os produtos estejam visíveis (ajuste para o seu caso)
-            WebDriverWait(driver, 10).until(
-                EC.presence_of_all_elements_located((By.CLASS_NAME, 'ui-search-layout__item'))
+            chrome_options.add_argument("--no-sandbox")
+            chrome_options.add_argument("--disable-dev-shm-usage")
+            chrome_options.add_argument("--window-size=1920,1080")
+            chrome_options.add_argument(
+                "user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/134.0.0.0 Safari/537.36"
             )
 
-            action = ActionChains(driver)
-
-            # Reobtem os elementos sempre dentro do loop para evitar stale reference
-            product_items = driver.find_elements(By.CSS_SELECTOR, '.poly-card__portada')
-            for i in range(len(product_items)):
-                try:
-                    item = driver.find_elements(By.CSS_SELECTOR, '.poly-card__portada')[i]
-                    action.move_to_element(item).perform()
-                    time.sleep(0.5)
-                except Exception as e:
-                    print(f"[AVISO] Elemento {i} ficou obsoleto: {e}")
-                    continue
-
-            WebDriverWait(driver, 10).until(
-                EC.presence_of_all_elements_located((By.CLASS_NAME, 'ui-search-layout__item'))
+            driver = webdriver.Chrome(
+                service=Service(ChromeDriverManager().install()),
+                options=chrome_options
             )
-
-                # Pega o HTML da página renderizada
-            html = driver.page_source
-
-            soup = BeautifulSoup(html, "html.parser")
-
-            items = soup.find_all('li', class_='ui-search-layout__item')
 
             produtos = []
 
-            for item in items:
-                nome = item.find('a', class_='poly-component__title')
-                if nome:
-                    nome = nome.text.strip()
+            for pagina in range(1, 6):  # ATÉ A 5ª PÁGINA
+                if pagina == 1:
+                    url = f"https://lista.mercadolivre.com.br/{produto}"
+                else:
+                    desde = (pagina - 1) * 48 + 1
+                    url = f"https://lista.mercadolivre.com.br/{produto}_Desde_{desde}"
 
-                imagem = item.find('img', class_='poly-component__picture')
-                if imagem:
-                    imagem = imagem['src']
+                print(f"📄 Coletando página {pagina}: {url}")
+                driver.get(url)
 
-                preco = item.find('span', class_='andes-money-amount andes-money-amount--cents-superscript')
-                if preco:
-                    preco = preco.text.strip()
+                time.sleep(5)  # Mercado Livre carrega via JS
 
-                link = item.find('a', class_='poly-component__title')
-                if link:
-                    link = link['href']
+                html = driver.page_source
+                soup = BeautifulSoup(html, "html.parser")
 
-                produtos.append({"Nome": nome, "Preço": preco, "imagem": imagem, "link": link})
+                items = soup.select('li.ui-search-layout__item, li.ui-search-layout__stack')
 
+                for item in items:
+                    nome = item.find('a', class_='poly-component__title')
+                    nome = nome.text.strip() if nome else ""
+
+                    imagem = item.find('img', class_='poly-component__picture')
+                    imagem = imagem['src'] if imagem else ""
+
+                    preco = item.find('span', class_='andes-money-amount')
+                    preco = preco.text.strip() if preco else ""
+
+                    link = item.find('a', class_='poly-component__title')
+                    link = link['href'] if link else ""
+
+                    produtos.append({
+                        "Nome": nome,
+                        "Preço": preco,
+                        "Imagem": imagem,
+                        "Link": link
+                    })
+
+                time.sleep(2)  # anti-ban básico 😇
+
+            driver.quit()
+
+            # Tratamento de preços
             for product in produtos:
                 preco = product['Preço']
-
-                # Verificar se o preço é uma string antes de aplicar 'replace'
                 if isinstance(preco, str):
-                    # Remove qualquer coisa que não seja número ou ponto (por exemplo, R$, vírgulas)
                     preco = preco.replace('R$', '').replace('.', '').replace(',', '.').strip()
                     product['Preço'] = float(preco) if preco else 0.0
 
-                # Ordenar a lista por preço de forma decrescente
             produtos_ordenados = sorted(produtos, key=lambda x: x['Preço'])
 
-            # Criar um DataFrame do Pandas para poder salvar no Excel
             df = pd.DataFrame(produtos_ordenados)
 
             excel_file = 'produtos_ordenados.xlsx'
-            # Salvar em um arquivo Excel
-            df.to_excel('produtos_ordenados.xlsx', index=False)
+            df.to_excel(excel_file, index=False)
 
-            # Carregar o arquivo Excel usando openpyxl para formatar as células
             wb = load_workbook(excel_file)
             ws = wb.active
 
-            # Criar um estilo de formatação de moeda
             currency_style = NamedStyle(name="currency_style", number_format='R$ #,##0.00')
 
-            # Aplicar a formatação de moeda na coluna de preços (supondo que o preço esteja na coluna 'Preço' que é a coluna 3)
-            for row in range(2, len(df) + 2):  # Começando da linha 2, já que a linha 1 é de cabeçalho
-                cell = ws.cell(row=row, column=2)  # A coluna 3 é a coluna do preço
-                cell.style = currency_style
+            for row in range(2, len(df) + 2):
+                ws.cell(row=row, column=2).style = currency_style
 
-            # Salvar o arquivo Excel com a formatação aplicada
             wb.save(excel_file)
 
-            # Mensagem de sucesso
-            print("CRIADO ARQUIVO EXCEL COM SUCESSO")
+            print("✅ ARQUIVO EXCEL CRIADO COM SUCESSO")
             os.startfile(excel_file)
 
-            return produtos
+            return produtos_ordenados
 
         except Exception as e:
-            print("ERRO DE CONSULTA DO MERCADO LIVRE!!!!")
-            print(f"Erro: {e}")  # Mostra a mensagem do erro
-            print(
-                f"Tipo de erro: {type(e)}")  # Mostra o tipo do erro (por exemplo, requests.exceptions.RequestException)
-            print(
-                f"Traceback completo: {traceback.format_exc()}")  # Mostra o traceback completo para entender onde o erro aconteceu
-            print("TENTANDO NOVAMENTE.")
-            tentativas+=1
+            print("❌ ERRO NA CONSULTA")
+            print(e)
+            tentativas += 1
             time.sleep(5)
-            continue
 
-
-    if tentativas >= maximotentativas:
-        print("NÚMERO MÁXIMO DE TENTATIVAS")
+    print("🚫 NÚMERO MÁXIMO DE TENTATIVAS")
     return None
-
 
 consulta = ConsultaMercadoLivre()
 
